@@ -7,6 +7,7 @@ import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
 import { Pagination } from "@/components/Pagination";
 import { ensureDefaultCategories } from "@/db/categories";
+import { findNotionUrls } from "@/db/articles";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
 
@@ -100,6 +101,7 @@ async function DashboardContent({
     .limit(PAGE_SIZE)
     .offset((currentPage - 1) * PAGE_SIZE);
 
+  const notionUrls = await findNotionUrls(list.map((a) => a.id));
   const nameById = new Map(userCategories.map((c) => [c.id, c.name]));
 
   return (
@@ -124,6 +126,7 @@ async function DashboardContent({
             <NewsCard
               key={article.id}
               article={article}
+              notionUrl={notionUrls.get(article.id) ?? null}
               categoryName={
                 article.categoryId
                   ? (nameById.get(article.categoryId) ?? null)

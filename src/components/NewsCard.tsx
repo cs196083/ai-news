@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Article } from "@/db/schema";
+import { NotionSaveButton } from "@/components/NotionSaveButton";
 import { categoryColor } from "@/lib/category-colors";
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", {
@@ -17,9 +18,12 @@ function formatDate(date: Date) {
 export function NewsCard({
   article,
   categoryName,
+  notionUrl,
 }: {
   article: Article;
   categoryName: string | null;
+  /** Notion에 저장된 페이지 주소 (저장 전이면 null) */
+  notionUrl: string | null;
 }) {
   const date = article.publishedAt ?? article.createdAt;
   return (
@@ -60,7 +64,7 @@ export function NewsCard({
           {article.summaryKo ?? article.excerpt}
         </p>
 
-        <div className="mt-auto border-t border-slate-100 pt-4 dark:border-neutral-800">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-4 dark:border-neutral-800">
           <a
             href={article.originalUrl}
             target="_blank"
@@ -70,6 +74,7 @@ export function NewsCard({
           >
             원문 보기 ↗
           </a>
+          <NotionSaveButton articleId={article.id} savedUrl={notionUrl} />
         </div>
       </div>
     </article>

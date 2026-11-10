@@ -1,11 +1,14 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
+  findArticle,
+  findNotionUrl,
   findUnenriched,
   findWithoutImage,
+  recordNotionSave,
   saveEnrichments,
   saveImages,
   saveNewArticles,
@@ -14,6 +17,7 @@ import { ensureDefaultCategories } from "@/db/categories";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { enrichArticles } from "@/lib/enrich";
+import { createNotionPage, trashNotionPage } from "@/lib/notion";
 import { fetchOgImage } from "@/lib/og-image";
 import { fetchRecentFeedItems, type SourceFailure } from "@/lib/rss";
 
@@ -109,6 +113,67 @@ export async function fetchNewsAction(): Promise<FetchNewsState> {
     return {
       status: "error",
       message: "뉴스를 저장하는 중 문제가 생겼어요. 다시 시도해 주세요.",
+    };
+  }
+}
+
+export type SaveNewsResult =
+  | { status: "saved"; url: string }
+  | { status: "error"; message: string };
+
+/** 기사 한 건을 Notion 데이터베이스에 저장한다. 이미 저장된 기사는 새로 만들지 않고 기존 페이지 주소를 돌려준다. */
+export async function saveNewsToNotionAction(
+  articleId: number,
+): Promise<SaveNewsResult> {
+  const { userId } = await auth();
+  if (!userId) return { status: "error", message: "로그인이 필요해요." };
+
+  try {
+    const article = await findArticle(userId, articleId);
+    if (!article) return { status: "error", message: "뉴스를 찾을 수 없어요." };
+
+    const existing = await findNotionUrl(article.id);
+    if (existing) return { status: "saved", url: existing };
+
+    let category: string | null = null;
+    if (article.categoryId !== null) {
+      const [row] = await db
+        .select({ name: categories.name })
+        .from(categories)
+        .where(
+          and(
+            eq(categories.userId, userId),
+            eq(categories.id, article.categoryId),
+          ),
+        );
+      category = row?.name ?? null;
+    }
+
+    const page = await createNotionPage({
+      title: article.titleKo ?? article.originalTitle,
+      summary: article.summaryKo ?? article.excerpt,
+      category,
+      source: article.source,
+      url: article.originalUrl,
+      publishedAt: article.publishedAt ?? article.createdAt,
+    });
+
+    if (!(await recordNotionSave(article.id, page.url))) {
+      // 동시에 다른 요청이 먼저 저장했다: 방금 만든 중복 페이지를 지우고 기존 주소를 쓴다.
+      await trashNotionPage(page.id).catch((e) =>
+        console.error("failed to trash duplicate notion page", e),
+      );
+      const winner = await findNotionUrl(article.id);
+      return { status: "saved", url: winner ?? page.url };
+    }
+
+    revalidatePath("/dashboard");
+    return { status: "saved", url: page.url };
+  } catch (e) {
+    console.error("saveNewsToNotionAction failed", e);
+    return {
+      status: "error",
+      message: "저장에 실패했어요. 다시 시도해 주세요.",
     };
   }
 }
