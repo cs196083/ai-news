@@ -15,6 +15,13 @@
       "when": 1794277602576,
       "tag": "0001_slippery_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794285355175,
+      "tag": "0002_fluffy_bastion",
+      "breakpoints": true
     }
   ]
 }

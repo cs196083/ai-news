@@ -1,5 +1,6 @@
 import "server-only";
 import Parser from "rss-parser";
+import { firstImageInHtml } from "./og-image";
 
 export const RSS_SOURCES = [
   {
@@ -18,6 +19,8 @@ export type FeedItem = {
   url: string;
   publishedAt: Date;
   excerpt: string | null;
+  /** 피드에 이미지가 있으면 그 주소. 없으면 null (나중에 기사 페이지에서 찾는다) */
+  imageUrl: string | null;
 };
 
 export type SourceFailure = { source: string; reason: string };
@@ -25,9 +28,11 @@ export type SourceFailure = { source: string; reason: string };
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 const EXCERPT_MAX = 600;
 
-const parser = new Parser({
+const parser = new Parser<unknown, { contentEncoded?: string }>({
   timeout: 10_000,
   headers: { "User-Agent": "ai-news-collector/1.0" },
+  // The Verge 같은 피드는 본문 HTML(content:encoded)에 이미지가 들어 있다.
+  customFields: { item: [["content:encoded", "contentEncoded"]] },
 });
 
 // 같은 기사가 추적 파라미터만 달라 중복 저장되지 않도록 URL을 정규화한다.
@@ -92,6 +97,7 @@ export async function fetchRecentFeedItems(now = new Date()) {
         url,
         publishedAt: published,
         excerpt: toExcerpt(entry.contentSnippet ?? entry.content),
+        imageUrl: firstImageInHtml(entry.contentEncoded ?? entry.content),
       });
     }
   });

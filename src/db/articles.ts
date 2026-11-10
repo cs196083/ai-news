@@ -1,10 +1,75 @@
 import "server-only";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
 import { articles } from "./schema";
 import type { FeedItem } from "@/lib/rss";
 
-/** 이미 저장된 URL 집합. 나중에 Claude 호출 전에 중복을 걸러낼 때 재사용한다. */
+/** 아직 번역·요약·분류하지 않은 기사 (최신순). title_ko가 비어 있으면 처리 대상이다. */
+export async function findUnenriched(userId: string, limit: number) {
+  return db
+    .select({
+      id: articles.id,
+      title: articles.originalTitle,
+      excerpt: articles.excerpt,
+    })
+    .from(articles)
+    .where(and(eq(articles.userId, userId), isNull(articles.titleKo)))
+    .orderBy(sql`${articles.publishedAt} desc nulls last`, desc(articles.id))
+    .limit(limit);
+}
+
+/**
+ * 번역·요약·분류 결과를 저장한다. 그 사이 다른 요청이 이미 처리한 기사는 덮어쓰지 않는다.
+ */
+export async function saveEnrichments(
+  userId: string,
+  enriched: Map<number, { titleKo: string; summaryKo: string; categoryId: number }>,
+) {
+  await Promise.all(
+    [...enriched].map(([id, value]) =>
+      db
+        .update(articles)
+        .set(value)
+        .where(
+          and(
+            eq(articles.userId, userId),
+            eq(articles.id, id),
+            isNull(articles.titleKo),
+          ),
+        ),
+    ),
+  );
+}
+
+/** 아직 대표 이미지를 찾지 않은 기사 (최신순). image_url이 null이면 대상이다. */
+export async function findWithoutImage(userId: string, limit: number) {
+  return db
+    .select({ id: articles.id, url: articles.originalUrl })
+    .from(articles)
+    .where(and(eq(articles.userId, userId), isNull(articles.imageUrl)))
+    .orderBy(sql`${articles.publishedAt} desc nulls last`, desc(articles.id))
+    .limit(limit);
+}
+
+/** 찾은 이미지 주소를 저장한다 (이미지가 없으면 ""). 이미 채워진 기사는 덮어쓰지 않는다. */
+export async function saveImages(userId: string, images: Map<number, string>) {
+  await Promise.all(
+    [...images].map(([id, imageUrl]) =>
+      db
+        .update(articles)
+        .set({ imageUrl })
+        .where(
+          and(
+            eq(articles.userId, userId),
+            eq(articles.id, id),
+            isNull(articles.imageUrl),
+          ),
+        ),
+    ),
+  );
+}
+
+/** 이미 저장된 URL 집합. AI 호출 전에 중복을 걸러낼 때도 쓸 수 있다. */
 export async function findExistingUrls(userId: string, urls: string[]) {
   if (urls.length === 0) return new Set<string>();
   const rows = await db
@@ -36,6 +101,7 @@ export async function saveNewArticles(userId: string, items: FeedItem[]) {
         source: i.source,
         publishedAt: i.publishedAt,
         excerpt: i.excerpt,
+        imageUrl: i.imageUrl,
       })),
     )
     // 동시 클릭 등으로 사이에 저장된 건은 유니크 제약이 막는다.

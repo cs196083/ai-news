@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
@@ -59,7 +59,7 @@ async function DashboardContent({
       .groupBy(articles.categoryId),
   ]);
 
-  const countOf = (id: number | null) =>
+  const countOf = (id: number) =>
     counts.find((c) => c.categoryId === id)?.value ?? 0;
   const total = counts.reduce((sum, c) => sum + c.value, 0);
 
@@ -69,17 +69,15 @@ async function DashboardContent({
       key: String(c.id),
       label: c.name,
       count: countOf(c.id),
+      categoryId: c.id,
     })),
-    { key: "none", label: "미분류", count: countOf(null) },
   ];
 
   const selectedKey = chips.some((c) => c.key === selected) ? selected : "all";
   const categoryFilter =
     selectedKey === "all"
       ? undefined
-      : selectedKey === "none"
-        ? isNull(articles.categoryId)
-        : eq(articles.categoryId, Number(selectedKey));
+      : eq(articles.categoryId, Number(selectedKey));
 
   // 선택한 카테고리의 전체 기사 수는 칩 개수와 같다. 범위를 벗어난 page는 가장 가까운 페이지로 맞춘다.
   const filteredTotal = chips.find((c) => c.key === selectedKey)?.count ?? 0;

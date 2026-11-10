@@ -31,6 +31,8 @@ export const articles = pgTable(
     originalUrl: text("original_url").notNull(),
     source: text().notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    // 원문 대표 이미지 URL. null = 아직 찾지 않음, "" = 찾았지만 이미지가 없음(다시 찾지 않는다).
+    imageUrl: text("image_url"),
     // RSS 본문 발췌(태그 제거). Claude 번역·요약 전에는 카드 요약 대체값이자 Claude 입력으로 쓴다.
     excerpt: text(),
     // null = 아직 Claude로 번역·요약하지 않음
