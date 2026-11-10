@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Scaffold only: `create-next-app` boilerplate plus installed dependencies. No app code has been written yet. `PRD.md` (Korean) is the source of truth for requirements, data model, and open decisions (section 10) — read it before implementing anything.
 
+## UI guide
+
+`ui.md` (Korean) is the source of truth for screen layout and styling (Tailwind CSS): the "AI 뉴스 수집기" dashboard, category bar with an add-category button above the news cards, card design, states, and responsive rules. Read it before building or changing any UI.
+
 ## Commands
 
 ```bash
