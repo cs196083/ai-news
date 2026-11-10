@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
-import { articles } from "./schema";
+import { articles, notionSaves } from "./schema";
 import type { FeedItem } from "@/lib/rss";
 
 /** 아직 번역·요약·분류하지 않은 기사 (최신순). title_ko가 비어 있으면 처리 대상이다. */
@@ -109,4 +109,44 @@ export async function saveNewArticles(userId: string, items: FeedItem[]) {
     .returning({ id: articles.id });
 
   return { saved: inserted.length, skipped: items.length - inserted.length };
+}
+
+/** 사용자의 기사 한 건 (다른 사용자의 기사는 찾을 수 없다). */
+export async function findArticle(userId: string, id: number) {
+  const [row] = await db
+    .select()
+    .from(articles)
+    .where(and(eq(articles.userId, userId), eq(articles.id, id)));
+  return row;
+}
+
+/** Notion에 저장된 기사의 페이지 주소. 저장 기록이 없으면 undefined. */
+export async function findNotionUrl(articleId: number) {
+  const [row] = await db
+    .select({ url: notionSaves.notionPageUrl })
+    .from(notionSaves)
+    .where(eq(notionSaves.articleId, articleId));
+  return row?.url;
+}
+
+/** 기사 id 목록 중 Notion에 저장된 것의 (기사 id → 페이지 주소). */
+export async function findNotionUrls(articleIds: number[]) {
+  if (articleIds.length === 0) return new Map<number, string>();
+  const rows = await db
+    .select({ id: notionSaves.articleId, url: notionSaves.notionPageUrl })
+    .from(notionSaves)
+    .where(inArray(notionSaves.articleId, articleIds));
+  return new Map(rows.map((r) => [r.id, r.url]));
+}
+
+/**
+ * Notion 저장 기록을 남긴다. 동시에 저장되어 이미 기록이 있으면 false (호출한 쪽이 중복 페이지를 정리한다).
+ */
+export async function recordNotionSave(articleId: number, url: string) {
+  const inserted = await db
+    .insert(notionSaves)
+    .values({ articleId, notionPageUrl: url })
+    .onConflictDoNothing({ target: notionSaves.articleId })
+    .returning({ id: notionSaves.id });
+  return inserted.length > 0;
 }

@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Working app: sign-in, manual news fetch (RSS), Gemini translation/summary/classification, image extraction, category filter, color-coded cards, and 9-per-page pagination are implemented (fetch, translation/classification, and images were confirmed working by the user; pagination was typechecked but not browser-tested).
 
-**Not implemented yet:** category add/rename/delete UI (the dashboard only lists categories and filters by them), Notion save (the `notion_saves` table exists but nothing writes to it).
+**Not implemented yet:** category add/rename/delete UI (the dashboard only lists categories and filters by them).
+
+Notion save is implemented (typechecked; the Notion API call was verified with a throwaway page, the button itself not browser-tested).
 
 `PRD.md` (Korean) is the source of truth for requirements, data model, and open decisions (section 10) — read it before implementing anything. `ui.md` (Korean) is the source of truth for layout and styling (header, category bar and colors, card with image, pagination, states and notices); it marks unbuilt parts as 미구현. Read it before building or changing any UI. If it ever conflicts with `PRD.md`, follow `PRD.md` and fix `ui.md`.
 
@@ -35,6 +37,7 @@ Restart `npm run dev` after changing `.env.local` or `next.config.ts`.
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` — Clerk
 - `DATABASE_URL` — Neon
 - `GEMINI_API_KEY` — Google AI Studio key. It must belong to a project **without billing/prepay**: a project on prepaid billing with a $0 balance returns `402 Your prepayment credits are depleted` for every model.
+- `NOTION_TOKEN`, `NOTION_DATABASE_ID` — Notion integration token and target database (must be shared with the integration)
 - `GEMINI_MODEL` — optional, defaults to `gemini-3.5-flash-lite`
 
 ## Architecture
@@ -57,10 +60,11 @@ File map:
 | `src/lib/og-image.ts`, `src/lib/image-hosts.ts` | `og:image` fetch; allowed image/page hosts (also feeds `next.config.ts` `images.remotePatterns`) |
 | `src/lib/category-colors.ts` | category id → Tailwind color classes (8-color palette; classes must stay full static strings) |
 | `src/db/schema.ts`, `src/db/index.ts` | Drizzle schema, Neon HTTP client |
-| `src/db/articles.ts` | article queries/mutations (all take `userId`) |
+| `src/db/articles.ts` | article queries/mutations (take `userId`; Notion-save records are keyed by article id) |
+| `src/lib/notion.ts` | Notion page creation (server-only) |
 | `src/db/categories.ts` | default categories, created on first access |
 | `src/app/dashboard/page.tsx` | dashboard (server component): filter, pagination (`PAGE_SIZE = 9`), cards |
-| `src/components/` | `NewsCard`, `CategoryBar`, `Pagination`, `FetchNewsButton` (client, `useActionState`) |
+| `src/components/` | `NewsCard`, `CategoryBar`, `Pagination`, `FetchNewsButton` (client, `useActionState`), `NotionSaveButton` (client) |
 
 ## News sources (RSS)
 
@@ -76,17 +80,17 @@ Out of scope: adding other sources, scheduled fetching, social/comments, full-ar
   - `image_url` null ⇒ not looked up yet; `""` ⇒ looked up, no image (do not retry).
   - `category_id` null ⇒ no category. There is **no "미분류" chip or badge**; such articles appear only under "전체". Deleting a category sets this to null (`onDelete: set null`).
 - `categories`: id, user_id, name (unique per user), created_at. Defaults: 기술·원리, 활용·도구, 교육·학습, 윤리·안전·저작권, 정책·규제, 산업·진로.
-- `notion_saves`: id, article_id (unique), notion_page_url, saved_at (unused so far)
+- `notion_saves`: id, article_id (unique), notion_page_url, saved_at (one row per article saved to Notion)
 
 ## Card and Notion contents
 
-- Card shows: original image (if any), Korean title (falls back to original title), Korean summary (falls back to the excerpt), category badge in its color, source, published date, original link. "Notion 저장" button and saved state are planned.
-- Notion save (planned) writes: Korean title, summary, category, source, original link, published date. Report success/failure to the user.
+- Card shows: original image (if any), Korean title (falls back to original title), Korean summary (falls back to the excerpt), category badge in its color, source, published date, original link. "뉴스 저장" button (becomes a "저장됨" link to the Notion page once saved).
+- Notion save (`saveNewsToNotionAction`, `src/lib/notion.ts`) writes to the DB properties 제목, 요약, 카데고리 (sic), 출처, 날짜, plus the original link in the page body (the DB has no link property). Failure shows an inline message under the button.
 
 ## Open decisions (see PRD section 10)
 
 - What to do with articles whose category was deleted (they keep their translation, so enrichment never revisits them).
-- Notion MCP auth: verify before implementing; fall back to direct Notion API (`@notionhq/client`) if hard. Once chosen, remove the unused package (`@modelcontextprotocol/sdk` or `@notionhq/client`).
+- Notion: decided on the direct Notion API (`@notionhq/client`, integration token) because the web server cannot use the interactive OAuth Notion MCP. `NOTION_DATABASE_ID` may be a bare ID or the full database URL.
 - Summary quality: Gemini sometimes adds generic sentences beyond the excerpt.
 
 ## Rules that span multiple files

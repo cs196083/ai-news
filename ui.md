@@ -138,7 +138,7 @@ focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-60
 │                                    │
 │ 한국어 요약 본문 (4줄까지 표시…)      │
 │ ─────────────────────────────────  │
-│ 원문 보기 ↗              [Notion 저장] │  ← Notion 저장은 미구현
+│ 원문 보기 ↗              [뉴스 저장]   │
 └────────────────────────────────────┘
 ```
 
@@ -169,7 +169,7 @@ dark:border-neutral-800 dark:bg-neutral-900
 - 원문 제목(영어)은 번역된 기사에서는 카드에 표시하지 않고 원문 링크의 `title` 속성에만 넣는다.
 - 이미지는 허용된 도메인(`src/lib/image-hosts.ts`)의 것만 쓴다. 허용 도메인은 `next.config.ts`의 `images.remotePatterns`와 같은 목록이다.
 
-### Notion 저장 버튼 (Secondary) **(미구현)**
+### 뉴스 저장 버튼 (Secondary)
 
 기본:
 ```
@@ -180,7 +180,7 @@ disabled:cursor-not-allowed disabled:opacity-60
 
 | 상태 | 표시 |
 |---|---|
-| 저장 전 | "Notion 저장" |
+| 저장 전 | "뉴스 저장" |
 | 저장 중 | 스피너 + "저장 중…", 버튼 비활성화 |
 | 저장 완료 | `text-emerald-600` 체크 아이콘 + "저장됨", 클릭 시 Notion 페이지로 이동 (중복 저장 방지) |
 | 실패 | 버튼 아래 `text-xs text-red-600` "저장에 실패했어요. 다시 시도해 주세요." + 다시 시도 가능 |
@@ -264,7 +264,7 @@ src/
     image-hosts.ts            # 이미지 허용 도메인
 ```
 
-**(미구현)** `AddCategoryButton.tsx`(인라인 입력), `NotionSaveButton.tsx`(저장 상태 관리).
+**(미구현)** `AddCategoryButton.tsx`(인라인 입력). `NotionSaveButton.tsx`(저장 상태 관리)는 구현됨.
 
 - 데이터 조회는 서버 컴포넌트에서, 클릭·입력 같은 상호작용이 필요한 부분만 `"use client"`로 분리한다.
 - 모든 데이터는 로그인한 Clerk 사용자 기준으로만 조회한다.

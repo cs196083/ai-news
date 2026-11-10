@@ -14,7 +14,6 @@
   "dependencies": {
     "@clerk/nextjs": "^7.9.25",
     "@google/genai": "^3.0.0",
-    "@modelcontextprotocol/sdk": "^1.32.2",
     "@neondatabase/serverless": "^1.2.0",
     "@notionhq/client": "^5.31.1",
     "drizzle-orm": "^0.45.4",
