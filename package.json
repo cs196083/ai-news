@@ -12,7 +12,6 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.7.0",
     "@clerk/nextjs": "^7.9.25",
     "@google/genai": "^3.0.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
