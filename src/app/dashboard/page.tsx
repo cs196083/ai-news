@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { CalendarPanel } from "@/components/CalendarPanel";
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
 import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
@@ -17,16 +18,20 @@ const PAGE_SIZE = 9;
 export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   return (
     <main className="flex-1 bg-slate-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
-            AI 뉴스 수집기
-          </h1>
-          <FetchNewsButton />
+      {/* 데스크톱(lg 이상): 왼쪽 뉴스 + 오른쪽 캘린더 사이드바. 그보다 작으면 세로로 쌓고 캘린더는 아래 접이식 패널 */}
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8 lg:px-8">
+        <div className="min-w-0 space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
+              AI 뉴스 수집기
+            </h1>
+            <FetchNewsButton />
+          </div>
+          <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent searchParams={searchParams} />
+          </Suspense>
         </div>
-        <Suspense fallback={<DashboardSkeleton />}>
-          <DashboardContent searchParams={searchParams} />
-        </Suspense>
+        <CalendarPanel />
       </div>
     </main>
   );
@@ -119,7 +124,7 @@ async function DashboardContent({
           )}
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2">
           {list.map((article) => (
             <NewsCard
               key={article.id}
@@ -146,7 +151,7 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6" aria-hidden>
       <div className="h-9 w-2/3 animate-pulse rounded-full bg-slate-200 dark:bg-neutral-800" />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2">
         {[0, 1, 2].map((i) => (
           <div
             key={i}

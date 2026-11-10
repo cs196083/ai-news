@@ -36,6 +36,7 @@ Restart `npm run dev` after changing `.env.local` or `next.config.ts`.
 - `DATABASE_URL` — Neon
 - `GEMINI_API_KEY` — Google AI Studio key. It must belong to a project **without billing/prepay**: a project on prepaid billing with a $0 balance returns `402 Your prepayment credits are depleted` for every model.
 - `GEMINI_MODEL` — optional, defaults to `gemini-3.5-flash-lite`
+- `GOOGLE_CALENDAR_ID` — Google Calendar ID (usually a gmail address) for the dashboard calendar sidebar. If empty, the sidebar shows a setup hint. The ID appears in the iframe URL, so it is visible to the signed-in user only (single-user app).
 
 ## Architecture
 
@@ -60,7 +61,7 @@ File map:
 | `src/db/articles.ts` | article queries/mutations (all take `userId`) |
 | `src/db/categories.ts` | default categories, created on first access |
 | `src/app/dashboard/page.tsx` | dashboard (server component): filter, pagination (`PAGE_SIZE = 9`), cards |
-| `src/components/` | `NewsCard`, `CategoryBar`, `Pagination`, `FetchNewsButton` (client, `useActionState`) |
+| `src/components/` | `NewsCard`, `CategoryBar`, `Pagination`, `FetchNewsButton` (client, `useActionState`), `CalendarPanel` (Google Calendar AGENDA iframe: sticky right sidebar on `lg`, collapsible `<details>` below) |
 
 ## News sources (RSS)
 
