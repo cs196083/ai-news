@@ -38,10 +38,10 @@ export function NewsCard({
       </div>
 
       <h2 className="mt-3 line-clamp-2 text-base font-semibold leading-snug text-slate-900 dark:text-neutral-50">
-        {article.titleKo}
+        {article.titleKo ?? article.originalTitle}
       </h2>
       <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-slate-600 dark:text-neutral-300">
-        {article.summaryKo}
+        {article.summaryKo ?? article.excerpt}
       </p>
 
       <div className="mt-auto border-t border-slate-100 pt-4 dark:border-neutral-800">

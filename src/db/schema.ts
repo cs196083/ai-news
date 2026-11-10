@@ -31,8 +31,11 @@ export const articles = pgTable(
     originalUrl: text("original_url").notNull(),
     source: text().notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
-    titleKo: text("title_ko").notNull(),
-    summaryKo: text("summary_ko").notNull(),
+    // RSS 본문 발췌(태그 제거). Claude 번역·요약 전에는 카드 요약 대체값이자 Claude 입력으로 쓴다.
+    excerpt: text(),
+    // null = 아직 Claude로 번역·요약하지 않음
+    titleKo: text("title_ko"),
+    summaryKo: text("summary_ko"),
     // null = '미분류'. 카테고리를 삭제하면 해당 기사는 자동으로 null(미분류)이 된다.
     categoryId: integer("category_id").references(() => categories.id, {
       onDelete: "set null",

@@ -3,20 +3,27 @@ import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
+import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
+import { Pagination } from "@/components/Pagination";
 import { ensureDefaultCategories } from "@/db/categories";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
 
 export const metadata = { title: "대시보드 · AI 뉴스 수집기" };
 
+const PAGE_SIZE = 9;
+
 export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   return (
     <main className="flex-1 bg-slate-50 dark:bg-neutral-950">
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
-          AI 뉴스 수집기
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
+            AI 뉴스 수집기
+          </h1>
+          <FetchNewsButton />
+        </div>
         <Suspense fallback={<DashboardSkeleton />}>
           <DashboardContent searchParams={searchParams} />
         </Suspense>
@@ -33,7 +40,7 @@ async function DashboardContent({
   const { userId } = await auth();
   if (!userId) redirect("/");
 
-  const { category } = await searchParams;
+  const { category, page } = await searchParams;
   const selected = typeof category === "string" ? category : "all";
 
   await ensureDefaultCategories(userId);
@@ -74,7 +81,15 @@ async function DashboardContent({
         ? isNull(articles.categoryId)
         : eq(articles.categoryId, Number(selectedKey));
 
-  // 최신순: 발행일 내림차순(발행일이 없는 기사는 뒤로), 같으면 저장 시각 내림차순
+  // 선택한 카테고리의 전체 기사 수는 칩 개수와 같다. 범위를 벗어난 page는 가장 가까운 페이지로 맞춘다.
+  const filteredTotal = chips.find((c) => c.key === selectedKey)?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
+  const requestedPage = Number(typeof page === "string" ? page : 1);
+  const currentPage = Number.isInteger(requestedPage)
+    ? Math.min(Math.max(requestedPage, 1), totalPages)
+    : 1;
+
+  // 최신순: 발행일 내림차순(발행일이 없는 기사는 뒤로), 같으면 저장 시각·id 내림차순(페이지 간 순서 고정)
   const list = await db
     .select()
     .from(articles)
@@ -82,7 +97,10 @@ async function DashboardContent({
     .orderBy(
       sql`${articles.publishedAt} desc nulls last`,
       desc(articles.createdAt),
-    );
+      desc(articles.id),
+    )
+    .limit(PAGE_SIZE)
+    .offset((currentPage - 1) * PAGE_SIZE);
 
   const nameById = new Map(userCategories.map((c) => [c.id, c.name]));
 
@@ -98,7 +116,7 @@ async function DashboardContent({
           </p>
           {total === 0 && (
             <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
-              뉴스 가져오기 기능이 연결되면 이곳에 카드로 표시돼요.
+              오른쪽 위 <strong>뉴스 가져오기</strong> 버튼을 눌러 보세요.
             </p>
           )}
         </div>
@@ -117,6 +135,11 @@ async function DashboardContent({
           ))}
         </div>
       )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        category={selectedKey}
+      />
     </>
   );
 }
