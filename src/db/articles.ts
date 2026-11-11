@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
 import { articles, notionSaves } from "./schema";
 import type { FeedItem } from "@/lib/rss";
@@ -109,6 +109,15 @@ export async function saveNewArticles(userId: string, items: FeedItem[]) {
     .returning({ id: articles.id });
 
   return { saved: inserted.length, skipped: items.length - inserted.length };
+}
+
+/** 사용자가 수집한 기사 총 개수. */
+export async function countArticles(userId: string) {
+  const [row] = await db
+    .select({ value: count() })
+    .from(articles)
+    .where(eq(articles.userId, userId));
+  return row?.value ?? 0;
 }
 
 /** 사용자의 기사 한 건 (다른 사용자의 기사는 찾을 수 없다). */

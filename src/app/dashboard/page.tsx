@@ -2,6 +2,10 @@ import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import {
+  ArticleCountBadge,
+  ArticleCountBadgeSkeleton,
+} from "@/components/ArticleCountBadge";
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
 import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
@@ -26,9 +30,14 @@ export default function DashboardPage({ searchParams }: PageProps<"/dashboard">)
     <main className="flex-1 bg-slate-50 dark:bg-neutral-950">
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
-            AI 뉴스 수집기
-          </h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-neutral-50">
+              AI 뉴스 수집기
+            </h1>
+            <Suspense fallback={<ArticleCountBadgeSkeleton />}>
+              <ArticleCountBadge />
+            </Suspense>
+          </div>
           <FetchNewsButton />
         </div>
         <Suspense fallback={<DashboardSkeleton />}>

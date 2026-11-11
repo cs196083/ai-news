@@ -68,6 +68,7 @@
 - 헤더(`layout.tsx`): 로그인한 경우에만 `flex justify-end p-4`로 Clerk `UserButton`을 오른쪽에 둔다. 앱 이름은 헤더가 아니라 대시보드 본문에 있다. 고정 상단 바(sticky)는 쓰지 않는다.
 - 제목 줄(`/dashboard`): `flex items-start justify-between gap-4`
   - 왼쪽: 앱 이름 **AI 뉴스 수집기** — `text-2xl font-bold text-slate-900 dark:text-neutral-50`
+  - 앱 이름 오른쪽(좁은 화면에서는 줄바꿈): **총 N개의 뉴스** 배지 — 수집된 전체 기사 수(카테고리·검색과 무관). `inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300`. 로딩 중에는 `animate-pulse` 스켈레톤. `ArticleCountBadge.tsx`
   - 오른쪽: **뉴스 가져오기** 버튼과 그 아래 결과 알림
 
 ### 뉴스 가져오기 버튼 (Primary)
