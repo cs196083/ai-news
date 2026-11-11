@@ -133,37 +133,42 @@ focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-60
 │ ┌────────────────────────────────┐ │
 │ │       원문 대표 이미지 (16:9)    │ │  ← 이미지가 있을 때만
 │ └────────────────────────────────┘ │
-│ [카테고리]       TechCrunch · 2026.11.10 │  ← 카테고리 배지(색), 출처·날짜
+│ [카테고리]                 2026.11.10 │  ← 카테고리 배지(색), 날짜
 │                                    │
 │ 한국어 제목 (굵게, 2줄까지)           │
 │                                    │
 │ 한국어 요약 본문 (4줄까지 표시…)      │
 │ ─────────────────────────────────  │
-│ 원문 보기 ↗              [뉴스 저장]   │
+│ 원문 보기 ↗ TechCrunch    [뉴스 저장]   │  ← 원문 링크, 출처는 뒤에 작게
 └────────────────────────────────────┘
 ```
 
 ### 카드 컨테이너
 
 ```
-flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white
-shadow-sm transition hover:shadow-md
-dark:border-neutral-800 dark:bg-neutral-900
+group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white
+shadow-sm transition-[border-color,box-shadow] duration-200
+hover:border-indigo-300 hover:shadow-md
+dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-indigo-800
 ```
 
-이미지가 카드 가장자리까지 꽉 차도록 컨테이너에는 안쪽 여백이 없고, 이미지 아래 본문 영역(`flex flex-1 flex-col p-5`)에 여백을 둔다.
+이미지가 카드 가장자리까지 꽉 차도록 컨테이너에는 안쪽 여백이 없고, 이미지 아래 본문 영역(`flex flex-1 flex-col px-5 pb-3 pt-5`)에 여백을 둔다. 주 사용자는 초·중등 교사와 개발자이므로, 업무 중 훑어 읽기 쉽게 글자를 조금 크게 잡고(요약 15px, `leading-7`) 누르는 영역은 36px 이상으로 한다.
+
+**hover·클릭**: 제목 `<a>`가 `after:absolute after:inset-0`으로 카드 전체를 덮어, 카드 어디를 눌러도 원문이 새 탭으로 열린다. 삭제 버튼, 하단 영역(`relative z-10`)은 그 위에 있어 따로 동작한다. hover하면 테두리·제목이 indigo로 바뀌고, 이미지가 `scale-[1.03]`으로 천천히 커진다(`motion-safe`만 적용). 키보드 포커스는 제목 링크의 `after` 가상 요소에 outline으로 카드 전체에 표시한다.
+
+**삭제 버튼**: 평소에는 `opacity-0`으로 숨기고, 카드에 마우스를 올리면(`group-hover`) 나타난다. 키보드 포커스 시에도 보이고, 터치 기기(`pointer-coarse`)에서는 항상 보인다. 삭제 중이거나 오류 메시지가 있을 때도 계속 보인다.
 
 ### 구성 요소
 
 | 요소 | 스타일 |
 |---|---|
 | 대표 이미지 | `relative aspect-video w-full bg-slate-100 dark:bg-neutral-800` 안에 `next/image`(`fill`, `object-cover`, `alt=""`). 제목이 바로 아래에 있어 장식용으로 취급한다. 이미지가 없으면 이 영역을 만들지 않는다. |
-| 카테고리 배지 | `rounded-full px-2.5 py-0.5 text-xs font-medium` + 카테고리 색(예: `bg-rose-50 text-rose-700`). 카테고리가 없는 기사는 배지를 표시하지 않는다(출처·날짜는 오른쪽 정렬 유지). |
-| 출처·날짜 | `text-xs text-slate-500` — 형식 "TechCrunch · 2026.11.10" |
-| 한국어 제목 | `mt-3 text-base font-semibold leading-snug text-slate-900 line-clamp-2` |
-| 한국어 요약 | `mt-2 text-sm leading-relaxed text-slate-600 line-clamp-4` |
-| 구분선 | `mt-auto border-t border-slate-100 pt-4` |
-| 원문 링크 | `text-sm text-slate-500 hover:text-indigo-600 hover:underline`, `target="_blank" rel="noopener noreferrer"`, `title`에 원문 제목 |
+| 카테고리 배지 | `rounded-full px-3 py-1 text-[13px] font-semibold` + 카테고리 색(예: `bg-rose-50 text-rose-700`). 카테고리가 없는 기사는 배지를 표시하지 않는다(출처·날짜는 오른쪽 정렬 유지). |
+| 날짜 | `<time>` `text-[13px] tabular-nums text-slate-600` — 형식 "2026.11.10" (배지 줄 오른쪽) |
+| 한국어 제목 | `mt-3 text-[1.1875rem] font-bold leading-snug tracking-tight text-balance break-keep text-slate-900 line-clamp-2` |
+| 한국어 요약 | `mt-2.5 text-[15px] leading-7 break-keep text-slate-700 line-clamp-4` |
+| 구분선 | `mt-auto border-t border-slate-100 pt-3` |
+| 원문 링크 | "**원문 보기 ↗**" (`font-medium text-slate-800`) 뒤에 출처 이름(`text-[13px]`). `inline-flex min-h-9 text-sm text-slate-600 hover:text-indigo-700`, `target="_blank" rel="noopener noreferrer"`, `title`에 원문 제목 |
 
 - 하단 영역은 `mt-auto`로 카드 높이가 달라도 아래쪽에 맞춰 정렬한다.
 - 번역 전 기사는 제목에 원제목을, 요약 자리에 RSS 발췌를 대신 표시한다.

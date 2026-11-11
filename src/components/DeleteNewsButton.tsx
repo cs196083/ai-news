@@ -14,7 +14,7 @@ export function DeleteNewsButton({ articleId }: { articleId: number }) {
         disabled={pending}
         aria-label="뉴스 삭제"
         title="삭제"
-        className="inline-flex size-7 items-center justify-center rounded-full bg-white/90 text-slate-500 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-neutral-900/90 dark:text-neutral-400 dark:ring-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-red-400"
+        className={`inline-flex size-7 items-center justify-center rounded-full bg-white/90 text-slate-500 shadow-sm ring-1 ring-slate-200 transition focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 pointer-coarse:opacity-100 group-hover:opacity-100 ${pending || error ? "opacity-100" : "opacity-0"} hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-neutral-900/90 dark:text-neutral-400 dark:ring-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-red-400`}
         onClick={() => {
           setError(null);
           startTransition(async () => {
