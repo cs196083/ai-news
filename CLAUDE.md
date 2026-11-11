@@ -28,6 +28,10 @@ No test runner is configured. After changing `src/db/schema.ts`, run `db:generat
 
 Restart `npm run dev` after changing `.env.local` or `next.config.ts`.
 
+### Slash commands (`.claude/commands/`)
+
+- `/news-workflow <branch-name>` (`news-workflow.md`): feature-development workflow. Checks that the current branch is `master` (warns and asks before switching), creates the new branch (if no name is given, asks what to build and suggests a lowercase-hyphen name), and recaps the stack/conventions from this file. When the user types `완료` or `done`, it lists changed files, proposes a commit message, commits after confirmation, merges into `master`, and summarizes the work. The default branch is `master`, not `main`.
+
 ## Next.js version warning
 
 `AGENTS.md` states this Next.js version (16.x, React 19) has breaking changes from training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code, and heed deprecation notices. Setup: App Router, `src/` dir, TypeScript, Tailwind v4, import alias `@/*` → `src/*`. `next.config.ts` enables `cacheComponents` and `partialPrefetching`.

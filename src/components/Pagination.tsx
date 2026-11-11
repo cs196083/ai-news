@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-function href(category: string, page: number) {
+function href(category: string, page: number, query: string) {
   const params = new URLSearchParams();
   if (category !== "all") params.set("category", category);
+  if (query) params.set("q", query);
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
   return qs ? `/dashboard?${qs}` : "/dashboard";
@@ -36,10 +37,12 @@ export function Pagination({
   currentPage,
   totalPages,
   category,
+  query = "",
 }: {
   currentPage: number;
   totalPages: number;
   category: string;
+  query?: string;
 }) {
   if (totalPages <= 1) return null;
 
@@ -50,7 +53,7 @@ export function Pagination({
     >
       {currentPage > 1 ? (
         <Link
-          href={href(category, currentPage - 1)}
+          href={href(category, currentPage - 1, query)}
           className={`${item} ${idle}`}
         >
           이전
@@ -73,7 +76,7 @@ export function Pagination({
         ) : (
           <Link
             key={p}
-            href={href(category, p)}
+            href={href(category, p, query)}
             aria-current={p === currentPage ? "page" : undefined}
             aria-label={`${p}페이지`}
             className={`${item} ${p === currentPage ? active : idle}`}
@@ -85,7 +88,7 @@ export function Pagination({
 
       {currentPage < totalPages ? (
         <Link
-          href={href(category, currentPage + 1)}
+          href={href(category, currentPage + 1, query)}
           className={`${item} ${idle}`}
         >
           다음

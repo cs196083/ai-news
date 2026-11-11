@@ -1,11 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
 import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
 import { Pagination } from "@/components/Pagination";
+import { SearchBar } from "@/components/SearchBar";
 import { ensureDefaultCategories } from "@/db/categories";
 import { findNotionUrls } from "@/db/articles";
 import { db } from "@/db";
@@ -14,6 +15,11 @@ import { articles, categories } from "@/db/schema";
 export const metadata = { title: "대시보드 · AI 뉴스 수집기" };
 
 const PAGE_SIZE = 9;
+
+/** LIKE 패턴의 특수문자(\ % _)를 글자 그대로 검색하도록 이스케이프한다. */
+function likePattern(keyword: string) {
+  return `%${keyword.replace(/[\\%_]/g, "\\$&")}%`;
+}
 
 export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   return (
@@ -41,7 +47,8 @@ async function DashboardContent({
   const { userId } = await auth();
   if (!userId) redirect("/");
 
-  const { category, page } = await searchParams;
+  const { category, page, q } = await searchParams;
+  const keyword = (typeof q === "string" ? q : "").trim().slice(0, 100);
   const selected = typeof category === "string" ? category : "all";
 
   await ensureDefaultCategories(userId);
@@ -80,8 +87,23 @@ async function DashboardContent({
       ? undefined
       : eq(articles.categoryId, Number(selectedKey));
 
-  // 선택한 카테고리의 전체 기사 수는 칩 개수와 같다. 범위를 벗어난 page는 가장 가까운 페이지로 맞춘다.
-  const filteredTotal = chips.find((c) => c.key === selectedKey)?.count ?? 0;
+  // 검색어는 원문/한국어 제목, 한국어 요약, 발췌문에서 찾는다.
+  const searchFilter = keyword
+    ? or(
+        ilike(articles.originalTitle, likePattern(keyword)),
+        ilike(articles.titleKo, likePattern(keyword)),
+        ilike(articles.summaryKo, likePattern(keyword)),
+        ilike(articles.excerpt, likePattern(keyword)),
+      )
+    : undefined;
+  const listFilter = and(eq(articles.userId, userId), categoryFilter, searchFilter);
+
+  // 검색어가 없으면 선택한 카테고리의 기사 수는 칩 개수와 같다. 범위를 벗어난 page는 가장 가까운 페이지로 맞춘다.
+  let filteredTotal = chips.find((c) => c.key === selectedKey)?.count ?? 0;
+  if (keyword) {
+    const [row] = await db.select({ value: count() }).from(articles).where(listFilter);
+    filteredTotal = row?.value ?? 0;
+  }
   const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
   const requestedPage = Number(typeof page === "string" ? page : 1);
   const currentPage = Number.isInteger(requestedPage)
@@ -92,7 +114,7 @@ async function DashboardContent({
   const list = await db
     .select()
     .from(articles)
-    .where(and(eq(articles.userId, userId), categoryFilter))
+    .where(listFilter)
     .orderBy(
       sql`${articles.publishedAt} desc nulls last`,
       desc(articles.createdAt),
@@ -106,13 +128,20 @@ async function DashboardContent({
 
   return (
     <>
-      <CategoryBar chips={chips} selected={selectedKey} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CategoryBar chips={chips} selected={selectedKey} query={keyword} />
+        <div className="w-full sm:ml-auto sm:w-72">
+          <SearchBar query={keyword} category={selectedKey} />
+        </div>
+      </div>
       {list.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center dark:border-neutral-700">
           <p className="font-medium text-slate-700 dark:text-neutral-200">
             {total === 0
               ? "아직 가져온 뉴스가 없어요."
-              : "이 카테고리에는 아직 뉴스가 없어요."}
+              : keyword
+                ? `'${keyword}'에 해당하는 뉴스가 없어요.`
+                : "이 카테고리에는 아직 뉴스가 없어요."}
           </p>
           {total === 0 && (
             <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
@@ -140,6 +169,7 @@ async function DashboardContent({
         currentPage={currentPage}
         totalPages={totalPages}
         category={selectedKey}
+        query={keyword}
       />
     </>
   );
