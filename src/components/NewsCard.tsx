@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Article } from "@/db/schema";
+import { DeleteNewsButton } from "@/components/DeleteNewsButton";
 import { NotionSaveButton } from "@/components/NotionSaveButton";
 import { categoryColor } from "@/lib/category-colors";
 
@@ -27,7 +28,8 @@ export function NewsCard({
 }) {
   const date = article.publishedAt ?? article.createdAt;
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+    <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+      <DeleteNewsButton articleId={article.id} />
       {article.imageUrl && (
         // 원문 대표 이미지. 제목이 바로 아래에 있어 장식용으로 두고 alt는 비운다.
         <div className="relative aspect-video w-full bg-slate-100 dark:bg-neutral-800">

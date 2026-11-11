@@ -120,6 +120,15 @@ export async function findArticle(userId: string, id: number) {
   return row;
 }
 
+/** 사용자의 기사 한 건을 삭제한다 (Notion 저장 기록은 cascade로 함께 지워진다). 지운 개수를 돌려준다. */
+export async function deleteArticle(userId: string, id: number) {
+  const deleted = await db
+    .delete(articles)
+    .where(and(eq(articles.userId, userId), eq(articles.id, id)))
+    .returning({ id: articles.id });
+  return deleted.length;
+}
+
 /** Notion에 저장된 기사의 페이지 주소. 저장 기록이 없으면 undefined. */
 export async function findNotionUrl(articleId: number) {
   const [row] = await db

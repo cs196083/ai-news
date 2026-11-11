@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
+  deleteArticle,
   findArticle,
   findNotionUrl,
   findUnenriched,
@@ -113,6 +114,30 @@ export async function fetchNewsAction(): Promise<FetchNewsState> {
     return {
       status: "error",
       message: "뉴스를 저장하는 중 문제가 생겼어요. 다시 시도해 주세요.",
+    };
+  }
+}
+
+export type DeleteNewsResult =
+  | { status: "deleted" }
+  | { status: "error"; message: string };
+
+/** 기사 한 건을 DB에서 삭제한다. 이미 없는 기사는 삭제된 것으로 본다. */
+export async function deleteNewsAction(
+  articleId: number,
+): Promise<DeleteNewsResult> {
+  const { userId } = await auth();
+  if (!userId) return { status: "error", message: "로그인이 필요해요." };
+
+  try {
+    await deleteArticle(userId, articleId);
+    revalidatePath("/dashboard");
+    return { status: "deleted" };
+  } catch (e) {
+    console.error("deleteNewsAction failed", e);
+    return {
+      status: "error",
+      message: "삭제에 실패했어요. 다시 시도해 주세요.",
     };
   }
 }
