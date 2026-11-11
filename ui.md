@@ -209,7 +209,7 @@ disabled:cursor-not-allowed disabled:opacity-60
 
 ### 로딩
 
-- 페이지를 처음 불러올 때: 스켈레톤(`animate-pulse` + `bg-slate-200`) — 칩 줄 1개와 카드 3장.
+- 페이지를 처음 불러올 때: 스켈레톤(`animate-pulse` + `bg-slate-200`) — 칩 줄 1개와 카드 3장. 카드 뼈대는 실제 카드와 같은 모양(이미지·배지·제목·요약·하단)으로 `NewsCardSkeleton.tsx`에 있다.
 - 뉴스를 가져오는 중: 버튼의 스피너와 "가져오는 중…" 문구만 보여 준다. 카드 자리에 스켈레톤을 따로 띄우지 않는다.
 
 ### 결과 알림

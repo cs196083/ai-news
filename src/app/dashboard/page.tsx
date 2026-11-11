@@ -9,6 +9,7 @@ import {
 import { CategoryBar, type CategoryChip } from "@/components/CategoryBar";
 import { FetchNewsButton } from "@/components/FetchNewsButton";
 import { NewsCard } from "@/components/NewsCard";
+import { NewsCardSkeleton } from "@/components/NewsCardSkeleton";
 import { Pagination } from "@/components/Pagination";
 import { SearchBar } from "@/components/SearchBar";
 import { ensureDefaultCategories } from "@/db/categories";
@@ -190,10 +191,7 @@ function DashboardSkeleton() {
       <div className="h-9 w-2/3 animate-pulse rounded-full bg-slate-200 dark:bg-neutral-800" />
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-48 animate-pulse rounded-xl bg-slate-200 dark:bg-neutral-800"
-          />
+          <NewsCardSkeleton key={i} />
         ))}
       </div>
     </div>
